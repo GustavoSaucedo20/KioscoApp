@@ -1,0 +1,17 @@
+{
+  "short_name": "Mi Kiosco",
+  "name": "Mi Kiosco - Sistema de Gestión",
+  "icons": [
+    {
+      "src": "icono.jpg",
+      "type": "image/jpg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#ffffff",
+  "theme_color": "#1b5e20",
+  "display": "standalone",
+  "orientation": "portrait"
+}
