@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Kiosco</title>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('https://images.unsplash.com/photo-1574007622830-9b48a032d847?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        header {
+            background-color: #1b5e20;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header button {
+            background-color: #ffffff;
+            color: #1b5e20;
+            font-weight: bold;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        header button:hover {
+            background-color: #e8f5e9;
+        }
+
+        nav {
+            background-color: #4caf50;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap; 
+        }
+
+        nav button {
+            background-color: #ffffff;
+            color: #2e7d32;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        nav button:hover {
+            background-color: #c8e6c9;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        .seccion {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            border-top: 5px solid #4caf50;
+        }
+
+        .seccion.activa {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
+            padding: 10px;
+            font-size: 16px;
+            width: 250px;
+            border: 2px solid #a5d6a7;
+            border-radius: 4px;
+            outline: none;
+            background: white;
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 510px;
+            height: 80px;
+            resize: vertical;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
+            border-color: #4caf50;
+        }
+
+        button.btn-accion {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        button.btn-accion:hover {
+            background-color: #388e3c;
+        }
+
+        .btn-borrar {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .btn-borrar:hover {
+            background-color: #c0392b;
+        }
+
+        .tarjeta-info {
+            margin-top: 20px;
+            padding: 15px;
+            border-left: 5px solid #1b5e20;
+            background-color: #e8f5e9;
+        }
+
+        ul.lista-productos, ul.lista-deudores-ui {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        ul.lista-productos li, ul.lista-deudores-ui li {
+            background: #fff;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-left: 5px solid #4caf50;
+            border-radius: 4px;
+        }
+
+        ul.lista-deudores-ui li {
+            border-left-color: #e74c3c;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-contenido {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+            border-top: 5px solid #1b5e20;
+            min-width: 300px;
+        }
+
+        #vista-admin {
+            display: none;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <div id="vista-kiosco">
+        <header>
+            <h1>Mi Kiosco</h1>
+            <button id="btnLogin">Ingresar (Admin)</button>
+        </header>
+
+        <nav>
+            <button onclick="mostrarSeccion('caja')">Caja / Lector</button>
+            <button onclick="mostrarSeccion('ver-precio')">Ver Precio</button>
+            <button onclick="mostrarSeccion('cargar-articulo')">Cargar Artículo</button>
+            <button onclick="mostrarSeccion('deudores')">Consultar Deudores</button>
+            <button onclick="mostrarSeccion('cobro-deudor')">Cobro Deudor</button>
+            <button onclick="mostrarSeccion('almacen')">Almacén (Todos los Artículos)</button>
+            <button onclick="mostrarSeccion('verduras')">Verduras y Frutas</button>
+            <button onclick="mostrarSeccion('ferreteria')">Ferretería</button>
+        </nav>
+
+        <main>
+            <section id="caja" class="seccion activa">
+                <h2>Ingreso de Artículos</h2>
+                <div class="input-group">
+                    <label for="codigoBarra">Código de Barras:</label>
+                    <input type="text" id="codigoBarra" placeholder="Escanee o ingrese código" autofocus>
+                </div>
+                
+                <div id="infoArticulo" class="tarjeta-info" style="display: none;">
+                    <p><strong>Descripción:</strong> <span id="lblDesc"></span></p>
+                    <p><strong>Precio:</strong> $<span id="lblPrecio"></span></p>
+                    <p><strong>Cantidad en stock:</strong> <span id="lblCant"></span></p>
+                    <p><strong>Fecha última entrada:</strong> <span id="lblFecha"></span></p>
+                </div>
+                <h3 id="errorCaja" style="color: red; display: none;">Número incorrecto</h3>
+            </section>
+
+            <section id="ver-precio" class="seccion">
+                <h2>Consultar Precios</h2>
+                <div class="input-group" style="position: relative;">
+                    <input type="text" id="codigoPrecio" placeholder="Nombre o código del producto" autocomplete="off">
+                    <button class="btn-accion" id="btnVerPrecio">Consultar</button>
+                    <ul id="sugerenciasPrecio" style="display: none; position: absolute; top: 45px; left: 0; width: 250px; background: white; border: 2px solid #4caf50; border-radius: 4px; list-style: none; padding: 0; margin: 0; z-index: 100; max-height: 150px; overflow-y: auto;"></ul>
+                </div>
+                <div id="resultadoPrecioTarjeta" class="tarjeta-info" style="display: none;">
+                    <h3 id="resultadoDescPrecio" style="margin-top:0;"></h3>
+                    <p><strong>Cantidad en stock:</strong> <span id="resultadoCant"></span></p>
+                </div>
+                <h3 id="errorPrecio" style="color: red; display: none;">Número o nombre incorrecto</h3>
+            </section>
+
+            <section id="cargar-articulo" class="seccion">
+                <h2>Cargar Nuevo Artículo</h2>
+                <div class="input-group">
+                    <input type="text" id="nuevoCodProd" placeholder="Código de barras">
+                    <input type="text" id="nuevoDescProd" placeholder="Nombre/Descripción del producto">
+                </div>
+                <div class="input-group">
+                    <input type="number" id="nuevoCantProd" placeholder="Cantidad (Stock)">
+                    <input type="number" id="nuevoPrecioProd" placeholder="Precio ($)">
+                </div>
+                <div class="input-group">
+                    <label for="nuevaCategoria">Categoría:</label>
+                    <select id="nuevaCategoria">
+                        <option value="Almacén">Almacén General</option>
+                        <option value="Verduras y Frutas">Verduras y Frutas</option>
+                        <option value="Ferretería">Ferretería</option>
+                    </select>
+                </div>
+                <button class="btn-accion" id="btnGuardarArticulo">Guardar Artículo</button>
+            </section>
+
+            <section id="deudores" class="seccion">
+                <h2>Consultar Deudores</h2>
+                <div class="input-group">
+                    <input type="text" id="buscarDeudor" placeholder="Buscar por Apellido">
+                    <button class="btn-accion" id="btnBuscarDeudor">Buscar</button>
+                    <button class="btn-accion" id="btnVerTodosDeudores" style="background-color: #34495e;">Ver Todos</button>
+                </div>
+                <ul id="listaDeudores" class="lista-deudores-ui"></ul>
+            </section>
+            <!-- COBRO A DEUDOR CON SUGERENCIA DNI - NOMBRE -->
+            <section id="cobro-deudor" class="seccion">
+                <h2>Cobro a Deudor</h2>
+               <div class="input-group" style="position: relative;">
+                    <input type="text" id="cobroDNI" placeholder="Escriba DNI o Nombre del Deudor..." autocomplete="off">
+                    <input type="number" id="cobroMonto" placeholder="Monto a Pagar ($)">
+                    <button class="btn-accion" id="btnCobrarDeuda">Registrar Pago</button>
+                    <ul id="sugerenciasDeudor" style="display: none; position: absolute; top: 45px; left: 0; width: 350px; background: white; border: 2px solid #4caf50; border-radius: 4px; list-style: none; padding: 0; margin: 0; z-index: 100; max-height: 150px; overflow-y: auto;"></ul>
+                </div>
+                <h3 id="resultadoCobro"></h3>
+            </section>
+            
+            <section id="almacen" class="seccion">
+                <h2>Almacén (Todos los Artículos Cargados)</h2>
+                <ul id="listaAlmacenTodos" class="lista-productos"></ul>
+            </section>
+
+            <section id="verduras" class="seccion">
+                <h2>Verduras y Frutas</h2>
+                <ul id="listaVerduras" class="lista-productos"></ul>
+            </section>
+
+            <section id="ferreteria" class="seccion">
+                <h2>Ferretería</h2>
+                <ul id="listaFerreteria" class="lista-productos"></ul>
+            </section>
+        </main>
+    </div>
+
+    <!-- PANEL DE ADMINISTRACIÓN -->
+    <div id="vista-admin">
+        <header>
+            <h1>Panel de Administración</h1>
+            <button onclick="salirAdmin()">Cerrar Sesión / Volver</button>
+        </header>
+        <main>
+            <section class="seccion activa">
+                <h2>Cargar Nuevo Deudor</h2>
+                <div class="input-group">
+                    <input type="text" id="deudorNombre" placeholder="Nombre">
+                    <input type="text" id="deudorApellido" placeholder="Apellido">
+                </div>
+                <div class="input-group">
+                    <input type="text" id="deudorDNI" placeholder="DNI">
+                    <input type="text" id="deudorTelefono" placeholder="Teléfono">
+                </div>
+                <div class="input-group">
+                    <input type="number" id="deudorMonto" placeholder="Deuda Inicial ($)">
+                    <input type="date" id="deudorFecha" title="Fecha de inicio de deuda">
+                </div>
+                <!-- CAMPO MOTIVO HASTA 100 PALABRAS -->
+                <div class="input-group" style="flex-direction: column; align-items: flex-start;">
+                    <label for="deudorMotivo"><strong>Motivo de la deuda:</strong></label>
+                    <textarea id="deudorMotivo" placeholder="Ingrese el motivo de la deuda (máximo 100 palabras)"></textarea>
+                </div>
+                <button class="btn-accion" id="btnGuardarDeudor">Guardar Deudor</button>
+            </section>
+
+            <!-- GESTIÓN EXCLUSIVA DE DEUDORES EN ADMINISTRACIÓN -->
+            <section class="seccion activa" style="margin-top: 20px;">
+                <h2>Gestión y Historial de Deudores (Solo Admin)</h2>
+                <ul id="listaAdminDeudores" class="lista-deudores-ui"></ul>
+            </section>
+        </main>
+    </div>
+
+    <div id="modalLogin" class="modal">
+        <div class="modal-contenido">
+            <h2>Ingreso Administrador</h2>
+            <input type="text" id="usuario" placeholder="Usuario (escribí admin)">
+            <input type="password" id="clave" placeholder="Contraseña (escribí 1234)">
+            <button class="btn-accion" id="btnConfirmarLogin">Entrar</button>
+            <button class="btn-accion" id="btnCerrarLogin" style="background-color: #e74c3c;">Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuración y conexión con Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyDLXwE3eB3gLl2Fd9VklwbT0ucaDeFqLbQ",
+  authDomain: "kioskoapp-624aa.firebaseapp.com",
+  projectId: "kioskoapp-624aa",
+  storageBucket: "kioskoapp-624aa.firebasestorage.app",
+  databaseURL: "https://kioskoapp-624aa-default-rtdb.firebaseio.com"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Referencias a las tablas en la nube
+const refProductos = db.ref('productos');
+const refDeudores = db.ref('deudores');
+
+// Recibe los productos de Firebase y los actualiza en pantalla automáticamente
+refProductos.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        for (let key in baseDatos) delete baseDatos[key];
+        Object.assign(baseDatos, data);
+        actualizarListasProductos();
+    }
+});
+
+// Recibe los deudores de Firebase y los actualiza en pantalla automáticamente
+refDeudores.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        deudoresLista.length = 0;
+        Object.values(data).forEach(d => deudoresLista.push(d));
+        actualizarListaAdminDeudores();
+    }
+});
+
+
+        // PERSISTENCIA LOCAL EN DISCO (localStorage)
+        const productosGuardados = localStorage.getItem('kiosco_baseDatos');
+        const baseDatos = productosGuardados ? JSON.parse(productosGuardados) : {
+            "7791234567890": { desc: "Coca Cola 2.25L", precio: 2500, cant: 24, fechaEntrada: "28/08/2026", categoria: "Almacén" },
+            "7799876543210": { desc: "Yerba Playadito 1Kg", precio: 3200, cant: 15, fechaEntrada: "25/08/2026", categoria: "Almacén" }
+        };
+
+        const deudoresGuardados = localStorage.getItem('kiosco_deudores');
+        const deudoresLista = deudoresGuardados ? JSON.parse(deudoresGuardados) : [
+            { 
+                nombre: "Juan", 
+                apellido: "Perez", 
+                dni: "12345678", 
+                telefono: "1122334455", 
+                deuda: 15000, 
+                fecha: "2026-08-01", 
+                motivo: "Fiado de golosinas y gaseosas varias", 
+                historialPagos: [] 
+            }
+        ];
+
+       function guardarDatosLocal() {
+    localStorage.setItem('kiosco_baseDatos', JSON.stringify(baseDatos));
+    localStorage.setItem('kiosco_deudores', JSON.stringify(deudoresLista));
+    
+    // Envía los datos actualizados a la nube (Firebase)
+    refProductos.set(baseDatos);
+    refDeudores.set(deudoresLista);
+     }
+
+        function mostrarSeccion(id) {
+            document.querySelectorAll('#vista-kiosco .seccion').forEach(sec => sec.classList.remove('activa'));
+            document.getElementById(id).classList.add('activa');
+            
+            if(id === 'caja') {
+                document.getElementById('codigoBarra').focus();
+            }
+
+            if(id === 'almacen' || id === 'verduras' || id === 'ferreteria') {
+                actualizarListasProductos();
+            }
+        }
+
+        const inputCodigo = document.getElementById('codigoBarra');
+        inputCodigo.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const codigo = this.value;
+                const articulo = baseDatos[codigo];
+                const errorText = document.getElementById('errorCaja');
+                const infoDiv = document.getElementById('infoArticulo');
+
+                if (articulo) {
+                    document.getElementById('lblDesc').innerText = articulo.desc;
+                    document.getElementById('lblPrecio').innerText = articulo.precio;
+                    document.getElementById('lblCant').innerText = articulo.cant;
+                    document.getElementById('lblFecha').innerText = articulo.fechaEntrada;
+                    infoDiv.style.display = 'block';
+                    errorText.style.display = 'none';
+                } else {
+                    infoDiv.style.display = 'none';
+                    errorText.style.display = 'block';
+                }
+                
+                this.value = ''; 
+            }
+        });
+
+        document.getElementById('btnVerPrecio').addEventListener('click', () => {
+            const cod = document.getElementById('codigoPrecio').value;
+            const tarjeta = document.getElementById('resultadoPrecioTarjeta');
+            const tit = document.getElementById('resultadoDescPrecio');
+            const cant = document.getElementById('resultadoCant');
+            const errorText = document.getElementById('errorPrecio');
+
+            if (baseDatos[cod]) {
+                tit.innerText = `${baseDatos[cod].desc} - $${baseDatos[cod].precio}`;
+                tit.style.color = "green";
+                cant.innerText = baseDatos[cod].cant;
+                tarjeta.style.display = "block";
+                errorText.style.display = "none";
+            } else {
+                tarjeta.style.display = "none";
+                errorText.style.display = "block";
+            }
+        });
+
+        // BÚSQUEDA EN TIEMPO REAL
+        const inputPrecio = document.getElementById('codigoPrecio');
+        const listaSugerencias = document.getElementById('sugerenciasPrecio');
+
+        inputPrecio.addEventListener('input', function() {
+            const texto = this.value.toLowerCase().trim();
+            listaSugerencias.innerHTML = '';
+
+            if (texto === '') {
+                listaSugerencias.style.display = 'none';
+                return;
+            }
+
+            let coincidencias = 0;
+
+            for (let cod in baseDatos) {
+                const prod = baseDatos[cod];
+                const coincideNombre = prod.desc.toLowerCase().includes(texto);
+                const coincideCodigo = cod.includes(texto);
+
+                if (coincideNombre || coincideCodigo) {
+                    coincidencias++;
+                    const li = document.createElement('li');
+                    li.style.padding = '8px 10px';
+                    li.style.cursor = 'pointer';
+                    li.style.borderBottom = '1px solid #eee';
+                    li.innerText = `${prod.desc} ($${prod.precio})`;
+                    
+                    li.onmouseover = () => li.style.background = '#e8f5e9';
+                    li.onmouseout = () => li.style.background = 'white';
+
+                    li.onclick = () => {
+                        inputPrecio.value = cod;
+                        listaSugerencias.style.display = 'none';
+                        document.getElementById('btnVerPrecio').click();
+                    };
+
+                    listaSugerencias.appendChild(li);
+                }
+            }
+
+            if (coincidencias > 0) {
+                listaSugerencias.style.display = 'block';
+            } else {
+                listaSugerencias.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target !== inputPrecio && e.target !== listaSugerencias) {
+                listaSugerencias.style.display = 'none';
+            }
+        });
+
+        document.getElementById('btnGuardarArticulo').addEventListener('click', () => {
+            const cod = document.getElementById('nuevoCodProd').value;
+            const desc = document.getElementById('nuevoDescProd').value;
+            const cant = document.getElementById('nuevoCantProd').value;
+            const precio = document.getElementById('nuevoPrecioProd').value;
+            const cat = document.getElementById('nuevaCategoria').value;
+
+            if (cod && desc && cant && precio) {
+                const hoy = new Date();
+                const fechaHoy = hoy.toLocaleDateString('es-AR');
+
+                baseDatos[cod] = { 
+                    desc: desc, 
+                    precio: parseFloat(precio), 
+                    cant: parseInt(cant), 
+                    fechaEntrada: fechaHoy,
+                    categoria: cat
+                };
+
+                guardarDatosLocal();
+
+                alert("Artículo guardado correctamente.");
+                
+                document.getElementById('nuevoCodProd').value = '';
+                document.getElementById('nuevoDescProd').value = '';
+                document.getElementById('nuevoCantProd').value = '';
+                document.getElementById('nuevoPrecioProd').value = '';
+                
+                actualizarListasProductos();
+            } else {
+                alert("Por favor, completá todos los datos del artículo.");
+            }
+        });
+
+        // --- ACTUALIZAR LISTAS DE PRODUCTOS CON BOTONES DE "VENDIDO" Y "BORRAR" ---
+        function actualizarListasProductos() {
+            const ulAlmacen = document.getElementById('listaAlmacenTodos');
+            const ulVerduras = document.getElementById('listaVerduras');
+            const ulFerreteria = document.getElementById('listaFerreteria');
+
+            if (!ulAlmacen) return;
+
+            ulAlmacen.innerHTML = '';
+            ulVerduras.innerHTML = '';
+            ulFerreteria.innerHTML = '';
+
+            let hayProductos = false;
+
+            for (let cod in baseDatos) {
+                hayProductos = true;
+                const p = baseDatos[cod];
+                
+                // Diseño con texto del producto y botones de acción a la derecha
+                const contenidoHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <strong>${p.desc}</strong> | Código: ${cod} | 
+                            <span style="color: #1b5e20; font-weight: bold;">Stock: ${p.cant}</span> | 
+                            Precio: $${p.precio} | Entrada: ${p.fechaEntrada} (${p.categoria})
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="venderProducto('${cod}')" style="background-color: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🛒 Vendido</button>
+                            <button onclick="borrarProducto('${cod}')" style="background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️ Borrar</button>
+                        </div>
+                    </div>
+                `;
+
+                const liTodos = document.createElement('li');
+                liTodos.innerHTML = contenidoHTML;
+                ulAlmacen.appendChild(liTodos);
+
+                if (p.categoria === 'Verduras y Frutas') {
+                    const liV = document.createElement('li');
+                    liV.innerHTML = contenidoHTML;
+                    ulVerduras.appendChild(liV);
+                } else if (p.categoria === 'Ferretería') {
+                    const liF = document.createElement('li');
+                    liF.innerHTML = contenidoHTML;
+                    ulFerreteria.appendChild(liF);
+                }
+            }
+
+            if (!hayProductos) {
+                ulAlmacen.innerHTML = '<li>No hay artículos registrados.</li>';
+            }
+            if (ulVerduras.children.length === 0) {
+                ulVerduras.innerHTML = '<li>No hay verduras o frutas registradas.</li>';
+            }
+            if (ulFerreteria.children.length === 0) {
+                ulFerreteria.innerHTML = '<li>No hay artículos de ferretería registrados.</li>';
+            }
+        }
+        
+        // --- FUNCIÓN PARA DESCONTAR STOCK AL VENDER ---
+        function venderProducto(cod) {
+            if (baseDatos[cod]) {
+                const p = baseDatos[cod];
+                const respuesta = prompt(`Vender "${p.desc}".\nStock actual: ${p.cant}\n\n¿Cuántas unidades vendiste?`, "1");
+                
+                if (respuesta !== null) {
+                    const cantidad = parseInt(respuesta.trim());
+                    
+                    if (!isNaN(cantidad) && cantidad > 0) {
+                        if (cantidad <= p.cant) {
+                            p.cant -= cantidad;
+                            guardarDatosLocal(); // Sincroniza en tiempo real con Firebase y el teléfono
+                            actualizarListasProductos();
+                            alert(`Venta registrada. Nuevo stock de ${p.desc}: ${p.cant}`);
+                        } else {
+                            alert(`No podés vender ${cantidad} unidades porque solo tenés ${p.cant} en stock.`);
+                        }
+                    } else {
+                        alert("Por favor, ingresá un número válido mayor a 0.");
+                    }
+                }
+            }
+        }
+
+        // --- FUNCIÓN PARA ELIMINAR UN PRODUCTO DEFINITIVAMENTE ---
+        function borrarProducto(cod) {
+            if (baseDatos[cod]) {
+                const nombreProd = baseDatos[cod].desc;
+                if (confirm(`¿Estás seguro de que querés borrar el producto "${nombreProd}" del sistema?`)) {
+                    delete baseDatos[cod];
+                    guardarDatosLocal(); // Elimina el producto en Firebase y en el teléfono
+                    actualizarListasProductos();
+                }
+            }
+        }
+  
+        // GUARDAR DEUDOR CON MOTIVO
+        document.getElementById('btnGuardarDeudor').addEventListener('click', () => {
+            const nom = document.getElementById('deudorNombre').value;
+            const ape = document.getElementById('deudorApellido').value;
+            const dni = document.getElementById('deudorDNI').value;
+            const tel = document.getElementById('deudorTelefono').value;
+            const monto = parseFloat(document.getElementById('deudorMonto').value);
+            const fecha = document.getElementById('deudorFecha').value;
+            const motivo = document.getElementById('deudorMotivo').value.trim();
+
+            if(nom && ape && dni && tel && !isNaN(monto) && fecha && motivo) {
+                deudoresLista.push({ 
+                    nombre: nom, 
+                    apellido: ape, 
+                    dni: dni, 
+                    telefono: tel,
+                    deuda: monto,
+                    fecha: fecha,
+                    motivo: motivo,
+                    historialPagos: []
+                });
+                
+                guardarDatosLocal();
+                alert("Deudor cargado exitosamente.");
+                
+                document.getElementById('deudorNombre').value = '';
+                document.getElementById('deudorApellido').value = '';
+                document.getElementById('deudorDNI').value = '';
+                document.getElementById('deudorTelefono').value = '';
+                document.getElementById('deudorMonto').value = '';
+                document.getElementById('deudorFecha').value = '';
+                document.getElementById('deudorMotivo').value = '';
+
+                actualizarListaAdminDeudores();
+            } else {
+                alert("Por favor, completá todos los campos del deudor, incluyendo el motivo.");
+            }
+        });
+
+        function mostrarDeudoresEnPantalla(lista, esBusqueda = false) {
+            const ul = document.getElementById('listaDeudores');
+            ul.innerHTML = ''; 
+
+            if(lista.length === 0) {
+                const mensaje = esBusqueda ? "Nombre incorrecto" : "No hay deudores registrados.";
+                ul.innerHTML = `<li><strong style="color:red;">${mensaje}</strong></li>`;
+                return;
+            }
+
+            lista.forEach(deudor => {
+                const li = document.createElement('li');
+                const partesFecha = deudor.fecha.split('-');
+                const fechaFormateada = partesFecha.length === 3 ? `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}` : deudor.fecha;
+                
+                li.innerHTML = `<strong>${deudor.apellido}, ${deudor.nombre}</strong> - DNI: ${deudor.dni} - Tel: ${deudor.telefono} 
+                                <br> <strong>Motivo:</strong> ${deudor.motivo || 'Sin especificar'}
+                                <br> <span style="color:${deudor.deuda > 0 ? '#e74c3c' : '#2ecc71'}; font-size: 1.1em;">
+                                <strong>Deuda actual: $${deudor.deuda}</strong></span> (Desde: ${fechaFormateada})`;
+                ul.appendChild(li);
+            });
+        }
+
+        document.getElementById('btnVerTodosDeudores').addEventListener('click', () => {
+            mostrarDeudoresEnPantalla(deudoresLista, false);
+        });
+
+        // --- 1. BÚSQUEDA AL HACER CLIC EN EL BOTÓN "BUSCAR" ---
+        document.getElementById('btnBuscarDeudor').addEventListener('click', () => {
+            const busqueda = document.getElementById('buscarDeudor').value.toLowerCase().trim();
+            if(busqueda === '') return;
+            
+            const resultados = deudoresLista.filter(d => 
+                d.apellido.toLowerCase().includes(busqueda) || 
+                d.nombre.toLowerCase().includes(busqueda) ||
+                d.dni.includes(busqueda)
+            );
+            mostrarDeudoresEnPantalla(resultados, true);
+        });
+
+        // --- 2. BÚSQUEDA EN TIEMPO REAL AL ESCRIBIR CADA LETRA ---
+        const inputBuscarDeudor = document.getElementById('buscarDeudor');
+
+        if (inputBuscarDeudor) {
+            inputBuscarDeudor.addEventListener('input', function() {
+                const busqueda = this.value.toLowerCase().trim();
+
+                // Si borrás todo el texto, vuelve a mostrar todos los deudores
+                if (busqueda === '') {
+                    mostrarDeudoresEnPantalla(deudoresLista, false);
+                    return;
+                }
+
+                // Filtra automáticamente a medida que vas escribiendo
+                const resultados = deudoresLista.filter(d => 
+                    d.apellido.toLowerCase().includes(busqueda) || 
+                    d.nombre.toLowerCase().includes(busqueda) ||
+                    d.dni.includes(busqueda)
+                );
+
+                mostrarDeudoresEnPantalla(resultados, true);
+            });
+        }
+        // --- BÚSQUEDA EN TIEMPO REAL EN COBRO DEUDOR ---
+        const inputCobroDNI = document.getElementById('cobroDNI');
+        const listaSugerenciasDeudor = document.getElementById('sugerenciasDeudor');
+
+        if (inputCobroDNI && listaSugerenciasDeudor) {
+            inputCobroDNI.addEventListener('input', function() {
+                const texto = this.value.toLowerCase().trim();
+                listaSugerenciasDeudor.innerHTML = '';
+
+                if (texto === '') {
+                    listaSugerenciasDeudor.style.display = 'none';
+                    return;
+                }
+
+                let coincidencias = 0;
+
+                deudoresLista.forEach(deudor => {
+                    const coincideNombre = deudor.nombre.toLowerCase().includes(texto);
+                    const coincideApellido = deudor.apellido.toLowerCase().includes(texto);
+                    const coincideDNI = deudor.dni.includes(texto);
+
+                    if (coincideNombre || coincideApellido || coincideDNI) {
+                        coincidencias++;
+                        const li = document.createElement('li');
+                        li.style.padding = '8px 10px';
+                        li.style.cursor = 'pointer';
+                        li.style.borderBottom = '1px solid #eee';
+                        li.innerText = `${deudor.apellido}, ${deudor.nombre} (DNI: ${deudor.dni}) - Deuda: $${deudor.deuda}`;
+
+                        li.onmouseover = () => li.style.background = '#e8f5e9';
+                        li.onmouseout = () => li.style.background = 'white';
+
+                        // Al hacer clic en el deudor sugerido, completa el DNI automáticamente 
+                        // aca puedo cambiar y poner DNI guion nombreDeudor
+                        li.onclick = () => { 
+                            inputCobroDNI.value = deudor.dni + " - " + deudor.nombre + " " + deudor.apellido;
+                            listaSugerenciasDeudor.style.display = 'none';
+                            document.getElementById('cobroMonto').focus(); // Pasa el cursor al campo del monto
+                        };
+
+                        listaSugerenciasDeudor.appendChild(li);
+                    }
+                });
+
+                if (coincidencias > 0) {
+                    listaSugerenciasDeudor.style.display = 'block';
+                } else {
+                    listaSugerenciasDeudor.style.display = 'none';
+                }
+            });
+
+            // Cierra la lista si hacés clic en cualquier otro lado de la pantalla
+            document.addEventListener('click', function(e) {
+                if (e.target !== inputCobroDNI && e.target !== listaSugerenciasDeudor) {
+                    listaSugerenciasDeudor.style.display = 'none';
+                }
+            });
+        }
+
+        // REGISTRO DE COBRO A DEUDOR (REFLEJA COBRADOR Y FECHA)
+        document.getElementById('btnCobrarDeuda').addEventListener('click', () => {
+            const textoEntrada = document.getElementById('cobroDNI').value.trim();
+            const montoPago = parseFloat(document.getElementById('cobroMonto').value);
+            const res = document.getElementById('resultadoCobro');
+
+             // Extrae solo el DNI (lo que esté antes del guion)
+            const dniBuscado = textoEntrada.split('-')[0].trim();
+
+            const deudor = deudoresLista.find(d => d.dni === dniBuscado);
+
+            if (deudor) {
+                if (!isNaN(montoPago) && montoPago > 0) {
+                    deudor.deuda -= montoPago;
+                    if(deudor.deuda < 0) deudor.deuda = 0;
+                    
+                    const ahora = new Date();
+                    const fechaPago = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
+                    
+                    // Registro del historial de cobro
+                    if(!deudor.historialPagos) deudor.historialPagos = [];
+                    deudor.historialPagos.push({
+                        monto: montoPago,
+                        fecha: fechaPago,
+                        cobradoPor: "Administrador / Caja"
+                    });
+
+                    guardarDatosLocal();
+                    
+                    res.innerText = `Pago exitoso. La deuda actual de ${deudor.nombre} ${deudor.apellido} es de $${deudor.deuda}`;
+                    res.style.color = "green";
+                    
+                    document.getElementById('cobroDNI').value = '';
+                    document.getElementById('cobroMonto').value = '';
+
+                    actualizarListaAdminDeudores();
+                } else {
+                    res.innerText = "Monto de pago inválido.";
+                    res.style.color = "red";
+                }
+            } else {
+                res.innerText = "Número incorrecto";
+                res.style.color = "red";
+            }
+        });
+
+        // ACTUALIZAR PANTALLA DE ADMINISTRACIÓN DE DEUDORES CON BOTÓN BORRAR
+        function actualizarListaAdminDeudores() {
+            const ulAdmin = document.getElementById('listaAdminDeudores');
+            if(!ulAdmin) return;
+            ulAdmin.innerHTML = '';
+
+            if(deudoresLista.length === 0) {
+                ulAdmin.innerHTML = '<li>No hay registros de deudores.</li>';
+                return;
+            }
+
+            deudoresLista.forEach((deudor, index) => {
+                const li = document.createElement('li');
+                let historialHtml = '';
+
+                if(deudor.historialPagos && deudor.historialPagos.length > 0) {
+                    historialHtml = '<br><strong>Historial de Pagos:</strong><ul>';
+                    deudor.historialPagos.forEach(p => {
+                        historialHtml += `<li>Abonó $${p.monto} el ${p.fecha} (Cobrado por: ${p.cobradoPor})</li>`;
+                    });
+                    historialHtml += '</ul>';
+                }
+
+                li.innerHTML = `
+                    <strong>${deudor.apellido}, ${deudor.nombre}</strong> (DNI: ${deudor.dni}) - Tel: ${deudor.telefono}
+                    <br><strong>Motivo:</strong> ${deudor.motivo || 'Sin especificar'}
+                    <br><span style="color:${deudor.deuda === 0 ? 'green' : 'red'}"><strong>Deuda restante: $${deudor.deuda}</strong></span>
+                    ${historialHtml}
+                    <br><button class="btn-borrar" onclick="eliminarDeudor(${index})">Eliminar Registro (Solo Admin)</button>
+                `;
+                ulAdmin.appendChild(li);
+            });
+        }
+
+        // ELIMINACIÓN EXCLUSIVA DE DEUDORES DESDE ADMINISTRACIÓN
+        function eliminarDeudor(index) {
+            if(confirm("¿Estás seguro de que deseas borrar definitivamente a este deudor del sistema?")) {
+                deudoresLista.splice(index, 1);
+                guardarDatosLocal();
+                actualizarListaAdminDeudores();
+            }
+        }
+
+        const modal = document.getElementById('modalLogin');
+        
+        document.getElementById('btnLogin').addEventListener('click', () => {
+            modal.style.display = 'flex';
+            document.getElementById('usuario').focus();
+        });
+        
+        document.getElementById('btnCerrarLogin').addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.getElementById('usuario').value = '';
+            document.getElementById('clave').value = '';
+        });
+
+        document.getElementById('btnConfirmarLogin').addEventListener('click', () => {
+            const user = document.getElementById('usuario').value;
+            const pass = document.getElementById('clave').value;
+
+            if ((user == "Gustavito" || user == "gustavito") && pass == "1994"){
+                modal.style.display = 'none';
+                document.getElementById('vista-kiosco').style.display = 'none';
+                document.getElementById('vista-admin').style.display = 'block';
+                
+                document.getElementById('usuario').value = '';
+                document.getElementById('clave').value = '';
+                actualizarListaAdminDeudores();
+            } else {
+                alert("Usuario o contraseña incorrecta");
+            }
+        });
+
+        function salirAdmin() {
+            document.getElementById('vista-admin').style.display = 'none';
+            document.getElementById('vista-kiosco').style.display = 'block';
+            mostrarSeccion('caja'); 
+        }
+
+        actualizarListasProductos();
+        actualizarListaAdminDeudores();
+    </script>
+</body>
+</html>
