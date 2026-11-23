@@ -4,7 +4,13 @@
   "icons": [
     {
       "src": "icono.jpg",
-      "type": "image/jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "icono.jpg",
+      "type": "image/jpeg",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
