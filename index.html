@@ -191,14 +191,15 @@
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-<!-- Configuración del ícono JPG -->
-<link rel="icon" type="image/jpeg" href="icono.jpg?v=3">
-<link rel="apple-touch-icon" href="icono.jpg?v=3">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
-<!-- Enlace al manifiesto de la PWA -->
-<link rel="manifest" href="manifest.json?v=3">
-<meta name="theme-color" content="#1b5e20"> 
+    <!-- Configuración del ícono JPG -->
+    <link rel="icon" type="image/jpeg" href="icono.jpg?v=3">
+    <link rel="apple-touch-icon" href="icono.jpg?v=3">
+
+    <!-- Enlace al manifiesto de la PWA -->
+    <link rel="manifest" href="manifest.json?v=3">
+    <meta name="theme-color" content="#1b5e20">
 </head>
 <body>
 
@@ -269,6 +270,12 @@
                     </select>
                 </div>
                 <button class="btn-accion" id="btnGuardarArticulo">Guardar Artículo</button>
+                
+                <!-- CARTEL DE ERROR POR CÓDIGO DUPLICADO CON BOTÓN RESET -->
+                <div id="errorCodDuplicado" style="display: none; background-color: #fadbd8; border: 2px solid #e74c3c; border-radius: 6px; padding: 15px; margin-top: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <span id="textoErrorCodDuplicado" style="color: #c0392b; font-size: 1.1em; font-weight: bold;"></span>
+                    <button onclick="limpiarFormularioCarga()" style="background-color: #c0392b; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">🔄 Empezar de nuevo</button>
+                </div>
             </section>
 
             <section id="deudores" class="seccion">
@@ -280,7 +287,7 @@
                 </div>
                 <ul id="listaDeudores" class="lista-deudores-ui"></ul>
             </section>
-            <!-- COBRO A DEUDOR CON SUGERENCIA DNI - NOMBRE -->
+
             <section id="cobro-deudor" class="seccion">
                 <h2>Cobro a Deudor</h2>
                <div class="input-group" style="position: relative;">
@@ -330,7 +337,6 @@
                     <input type="number" id="deudorMonto" placeholder="Deuda Inicial ($)">
                     <input type="date" id="deudorFecha" title="Fecha de inicio de deuda">
                 </div>
-                <!-- CAMPO MOTIVO HASTA 100 PALABRAS -->
                 <div class="input-group" style="flex-direction: column; align-items: flex-start;">
                     <label for="deudorMotivo"><strong>Motivo de la deuda:</strong></label>
                     <textarea id="deudorMotivo" placeholder="Ingrese el motivo de la deuda (máximo 100 palabras)"></textarea>
@@ -338,10 +344,15 @@
                 <button class="btn-accion" id="btnGuardarDeudor">Guardar Deudor</button>
             </section>
 
-            <!-- GESTIÓN EXCLUSIVA DE DEUDORES EN ADMINISTRACIÓN -->
             <section class="seccion activa" style="margin-top: 20px;">
                 <h2>Gestión y Historial de Deudores (Solo Admin)</h2>
                 <ul id="listaAdminDeudores" class="lista-deudores-ui"></ul>
+            </section>
+
+            <!-- SECCIÓN DE PRODUCTOS VENDIDOS -->
+            <section class="seccion activa" style="margin-top: 20px;">
+                <h2>📜 Historial de Productos Vendidos</h2>
+                <ul id="listaProductosVendidos" style="list-style: none; padding: 0;"></ul>
             </section>
         </main>
     </div>
@@ -357,44 +368,7 @@
     </div>
 
     <script>
-        // Configuración y conexión con Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyDLXwE3eB3gLl2Fd9VklwbT0ucaDeFqLbQ",
-  authDomain: "kioskoapp-624aa.firebaseapp.com",
-  projectId: "kioskoapp-624aa",
-  storageBucket: "kioskoapp-624aa.firebasestorage.app",
-  databaseURL: "https://kioskoapp-624aa-default-rtdb.firebaseio.com"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// Referencias a las tablas en la nube
-const refProductos = db.ref('productos');
-const refDeudores = db.ref('deudores');
-
-// Recibe los productos de Firebase y los actualiza en pantalla automáticamente
-refProductos.on('value', (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        for (let key in baseDatos) delete baseDatos[key];
-        Object.assign(baseDatos, data);
-        actualizarListasProductos();
-    }
-});
-
-// Recibe los deudores de Firebase y los actualiza en pantalla automáticamente
-refDeudores.on('value', (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        deudoresLista.length = 0;
-        Object.values(data).forEach(d => deudoresLista.push(d));
-        actualizarListaAdminDeudores();
-    }
-});
-
-
-        // PERSISTENCIA LOCAL EN DISCO (localStorage)
+        // PERSISTENCIA LOCAL Y VARIABLES DE DATOS
         const productosGuardados = localStorage.getItem('kiosco_baseDatos');
         const baseDatos = productosGuardados ? JSON.parse(productosGuardados) : {
             "7791234567890": { desc: "Coca Cola 2.25L", precio: 2500, cant: 24, fechaEntrada: "28/08/2026", categoria: "Almacén" },
@@ -415,14 +389,60 @@ refDeudores.on('value', (snapshot) => {
             }
         ];
 
-       function guardarDatosLocal() {
-    localStorage.setItem('kiosco_baseDatos', JSON.stringify(baseDatos));
-    localStorage.setItem('kiosco_deudores', JSON.stringify(deudoresLista));
-    
-    // Envía los datos actualizados a la nube (Firebase)
-    refProductos.set(baseDatos);
-    refDeudores.set(deudoresLista);
-     }
+        let ventasLista = [];
+
+        // Configuración y conexión con Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyDLXwE3eB3gLl2Fd9VklwbT0ucaDeFqLbQ",
+          authDomain: "kioskoapp-624aa.firebaseapp.com",
+          projectId: "kioskoapp-624aa",
+          storageBucket: "kioskoapp-624aa.firebasestorage.app",
+          databaseURL: "https://kioskoapp-624aa-default-rtdb.firebaseio.com"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Referencias a las tablas en la nube
+        const refProductos = db.ref('productos');
+        const refDeudores = db.ref('deudores');
+        const refVentas = db.ref('ventas');
+
+        // Recibe los productos de Firebase y los actualiza en pantalla automáticamente
+        refProductos.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                for (let key in baseDatos) delete baseDatos[key];
+                Object.assign(baseDatos, data);
+                actualizarListasProductos();
+            }
+        });
+
+        // Recibe los deudores de Firebase y los actualiza en pantalla automáticamente
+        refDeudores.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                deudoresLista.length = 0;
+                Object.values(data).forEach(d => deudoresLista.push(d));
+                actualizarListaAdminDeudores();
+            }
+        });
+
+        // Recibe las ventas de Firebase en tiempo real
+        refVentas.on('value', (snapshot) => {
+            const data = snapshot.val();
+            ventasLista = data ? Object.values(data) : [];
+            actualizarListaVentasAdmin();
+        });
+
+        function guardarDatosLocal() {
+            localStorage.setItem('kiosco_baseDatos', JSON.stringify(baseDatos));
+            localStorage.setItem('kiosco_deudores', JSON.stringify(deudoresLista));
+            
+            // Envía los datos actualizados a la nube (Firebase)
+            refProductos.set(baseDatos);
+            refDeudores.set(deudoresLista);
+        }
 
         function mostrarSeccion(id) {
             document.querySelectorAll('#vista-kiosco .seccion').forEach(sec => sec.classList.remove('activa'));
@@ -480,7 +500,7 @@ refDeudores.on('value', (snapshot) => {
             }
         });
 
-        // BÚSQUEDA EN TIEMPO REAL
+        // BÚSQUEDA EN TIEMPO REAL EN CONSULTAR PRECIOS
         const inputPrecio = document.getElementById('codigoPrecio');
         const listaSugerencias = document.getElementById('sugerenciasPrecio');
 
@@ -534,14 +554,27 @@ refDeudores.on('value', (snapshot) => {
             }
         });
 
+        // GUARDAR ARTÍCULO CON VALIDACIÓN DE CÓDIGO DUPLICADO Y CARTEL CON BOTÓN RESET
         document.getElementById('btnGuardarArticulo').addEventListener('click', () => {
-            const cod = document.getElementById('nuevoCodProd').value;
+            const cod = document.getElementById('nuevoCodProd').value.trim();
             const desc = document.getElementById('nuevoDescProd').value;
             const cant = document.getElementById('nuevoCantProd').value;
             const precio = document.getElementById('nuevoPrecioProd').value;
             const cat = document.getElementById('nuevaCategoria').value;
 
             if (cod && desc && cant && precio) {
+                const cartelError = document.getElementById('errorCodDuplicado');
+                const textoError = document.getElementById('textoErrorCodDuplicado');
+
+                // VERIFICACIÓN DE CÓDIGO DUPLICADO
+                if (baseDatos[cod]) {
+                    textoError.innerText = `⚠️ ¡ERROR DE CÓDIGO DUPLICADO! El código "${cod}" ya pertenece a: "${baseDatos[cod].desc}".`;
+                    cartelError.style.display = 'flex';
+                    return;
+                } else {
+                    cartelError.style.display = 'none';
+                }
+
                 const hoy = new Date();
                 const fechaHoy = hoy.toLocaleDateString('es-AR');
 
@@ -557,18 +590,29 @@ refDeudores.on('value', (snapshot) => {
 
                 alert("Artículo guardado correctamente.");
                 
-                document.getElementById('nuevoCodProd').value = '';
-                document.getElementById('nuevoDescProd').value = '';
-                document.getElementById('nuevoCantProd').value = '';
-                document.getElementById('nuevoPrecioProd').value = '';
-                
+                limpiarFormularioCarga();
                 actualizarListasProductos();
             } else {
                 alert("Por favor, completá todos los datos del artículo.");
             }
         });
 
-        // --- ACTUALIZAR LISTAS DE PRODUCTOS CON BOTONES DE "VENDIDO" Y "BORRAR" ---
+        // FUNCIÓN PARA LIMPIAR CAMPOS Y OCULTAR EL CARTEL DE ERROR
+        function limpiarFormularioCarga() {
+            document.getElementById('nuevoCodProd').value = '';
+            document.getElementById('nuevoDescProd').value = '';
+            document.getElementById('nuevoCantProd').value = '';
+            document.getElementById('nuevoPrecioProd').value = '';
+            
+            const cartelError = document.getElementById('errorCodDuplicado');
+            if (cartelError) {
+                cartelError.style.display = 'none';
+            }
+            
+            document.getElementById('nuevoCodProd').focus();
+        }
+
+        // ACTUALIZAR LISTAS DE PRODUCTOS CON BOTÓN "VENDER"
         function actualizarListasProductos() {
             const ulAlmacen = document.getElementById('listaAlmacenTodos');
             const ulVerduras = document.getElementById('listaVerduras');
@@ -586,7 +630,6 @@ refDeudores.on('value', (snapshot) => {
                 hayProductos = true;
                 const p = baseDatos[cod];
                 
-                // Diseño con texto del producto y botones de acción a la derecha
                 const contenidoHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div>
@@ -595,7 +638,7 @@ refDeudores.on('value', (snapshot) => {
                             Precio: $${p.precio} | Entrada: ${p.fechaEntrada} (${p.categoria})
                         </div>
                         <div style="display: flex; gap: 5px;">
-                            <button onclick="venderProducto('${cod}')" style="background-color: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🛒 Vendido</button>
+                            <button onclick="venderProducto('${cod}')" style="background-color: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🛒 Vender</button>
                             <button onclick="borrarProducto('${cod}')" style="background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️ Borrar</button>
                         </div>
                     </div>
@@ -627,7 +670,7 @@ refDeudores.on('value', (snapshot) => {
             }
         }
         
-        // --- FUNCIÓN PARA DESCONTAR STOCK AL VENDER ---
+        // FUNCIÓN PARA REGISTRAR VENTA Y GUARDAR HISTORIAL
         function venderProducto(cod) {
             if (baseDatos[cod]) {
                 const p = baseDatos[cod];
@@ -639,7 +682,20 @@ refDeudores.on('value', (snapshot) => {
                     if (!isNaN(cantidad) && cantidad > 0) {
                         if (cantidad <= p.cant) {
                             p.cant -= cantidad;
-                            guardarDatosLocal(); // Sincroniza en tiempo real con Firebase y el teléfono
+                            
+                            const fechaActual = new Date();
+                            const registroVenta = {
+                                id: Date.now(),
+                                cod: cod,
+                                desc: p.desc,
+                                cant: cantidad,
+                                precioTotal: p.precio * cantidad,
+                                fechaHora: fechaActual.toLocaleString('es-AR')
+                            };
+
+                            refVentas.child(registroVenta.id).set(registroVenta);
+                            
+                            guardarDatosLocal();
                             actualizarListasProductos();
                             alert(`Venta registrada. Nuevo stock de ${p.desc}: ${p.cant}`);
                         } else {
@@ -652,13 +708,47 @@ refDeudores.on('value', (snapshot) => {
             }
         }
 
-        // --- FUNCIÓN PARA ELIMINAR UN PRODUCTO DEFINITIVAMENTE ---
+        // FUNCIÓN PARA MOSTRAR HISTORIAL DE VENTAS EN ADMIN
+        function actualizarListaVentasAdmin() {
+            const ulVentas = document.getElementById('listaProductosVendidos');
+            if (!ulVentas) return;
+
+            ulVentas.innerHTML = '';
+
+            if (ventasLista.length === 0) {
+                ulVentas.innerHTML = '<li>No hay ventas registradas aún.</li>';
+                return;
+            }
+
+            ventasLista.slice().reverse().forEach(v => {
+                const li = document.createElement('li');
+                li.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #ddd; background: white; margin-bottom: 5px; border-radius: 4px;";
+                li.innerHTML = `
+                    <div>
+                        <strong>${v.desc}</strong> (${v.cant} u.) - 
+                        <span style="color: #2e7d32; font-weight: bold;">$${v.precioTotal}</span> | 
+                        <small style="color: #666;">📅 ${v.fechaHora}</small>
+                    </div>
+                    <button onclick="eliminarRegistroVenta('${v.id}')" style="background-color: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">🗑️ Eliminar</button>
+                `;
+                ulVentas.appendChild(li);
+            });
+        }
+
+        // ELIMINAR REGISTRO DE VENTA
+        function eliminarRegistroVenta(idVenta) {
+            if (confirm("¿Querés eliminar este registro de venta del historial?")) {
+                refVentas.child(idVenta).remove();
+            }
+        }
+
+        // FUNCIÓN PARA ELIMINAR UN PRODUCTO DEFINITIVAMENTE
         function borrarProducto(cod) {
             if (baseDatos[cod]) {
                 const nombreProd = baseDatos[cod].desc;
                 if (confirm(`¿Estás seguro de que querés borrar el producto "${nombreProd}" del sistema?`)) {
                     delete baseDatos[cod];
-                    guardarDatosLocal(); // Elimina el producto en Firebase y en el teléfono
+                    guardarDatosLocal();
                     actualizarListasProductos();
                 }
             }
@@ -730,7 +820,7 @@ refDeudores.on('value', (snapshot) => {
             mostrarDeudoresEnPantalla(deudoresLista, false);
         });
 
-        // --- 1. BÚSQUEDA AL HACER CLIC EN EL BOTÓN "BUSCAR" ---
+        // BÚSQUEDA EN TIEMPO REAL
         document.getElementById('btnBuscarDeudor').addEventListener('click', () => {
             const busqueda = document.getElementById('buscarDeudor').value.toLowerCase().trim();
             if(busqueda === '') return;
@@ -743,20 +833,17 @@ refDeudores.on('value', (snapshot) => {
             mostrarDeudoresEnPantalla(resultados, true);
         });
 
-        // --- 2. BÚSQUEDA EN TIEMPO REAL AL ESCRIBIR CADA LETRA ---
         const inputBuscarDeudor = document.getElementById('buscarDeudor');
 
         if (inputBuscarDeudor) {
             inputBuscarDeudor.addEventListener('input', function() {
                 const busqueda = this.value.toLowerCase().trim();
 
-                // Si borrás todo el texto, vuelve a mostrar todos los deudores
                 if (busqueda === '') {
                     mostrarDeudoresEnPantalla(deudoresLista, false);
                     return;
                 }
 
-                // Filtra automáticamente a medida que vas escribiendo
                 const resultados = deudoresLista.filter(d => 
                     d.apellido.toLowerCase().includes(busqueda) || 
                     d.nombre.toLowerCase().includes(busqueda) ||
@@ -766,7 +853,8 @@ refDeudores.on('value', (snapshot) => {
                 mostrarDeudoresEnPantalla(resultados, true);
             });
         }
-        // --- BÚSQUEDA EN TIEMPO REAL EN COBRO DEUDOR ---
+
+        // BÚSQUEDA EN TIEMPO REAL EN COBRO DEUDOR
         const inputCobroDNI = document.getElementById('cobroDNI');
         const listaSugerenciasDeudor = document.getElementById('sugerenciasDeudor');
 
@@ -798,12 +886,10 @@ refDeudores.on('value', (snapshot) => {
                         li.onmouseover = () => li.style.background = '#e8f5e9';
                         li.onmouseout = () => li.style.background = 'white';
 
-                        // Al hacer clic en el deudor sugerido, completa el DNI automáticamente 
-                        // aca puedo cambiar y poner DNI guion nombreDeudor
                         li.onclick = () => { 
                             inputCobroDNI.value = deudor.dni + " - " + deudor.nombre + " " + deudor.apellido;
                             listaSugerenciasDeudor.style.display = 'none';
-                            document.getElementById('cobroMonto').focus(); // Pasa el cursor al campo del monto
+                            document.getElementById('cobroMonto').focus();
                         };
 
                         listaSugerenciasDeudor.appendChild(li);
@@ -817,7 +903,6 @@ refDeudores.on('value', (snapshot) => {
                 }
             });
 
-            // Cierra la lista si hacés clic en cualquier otro lado de la pantalla
             document.addEventListener('click', function(e) {
                 if (e.target !== inputCobroDNI && e.target !== listaSugerenciasDeudor) {
                     listaSugerenciasDeudor.style.display = 'none';
@@ -825,13 +910,12 @@ refDeudores.on('value', (snapshot) => {
             });
         }
 
-        // REGISTRO DE COBRO A DEUDOR (REFLEJA COBRADOR Y FECHA)
+        // REGISTRO DE COBRO A DEUDOR
         document.getElementById('btnCobrarDeuda').addEventListener('click', () => {
             const textoEntrada = document.getElementById('cobroDNI').value.trim();
             const montoPago = parseFloat(document.getElementById('cobroMonto').value);
             const res = document.getElementById('resultadoCobro');
 
-             // Extrae solo el DNI (lo que esté antes del guion)
             const dniBuscado = textoEntrada.split('-')[0].trim();
 
             const deudor = deudoresLista.find(d => d.dni === dniBuscado);
@@ -844,7 +928,6 @@ refDeudores.on('value', (snapshot) => {
                     const ahora = new Date();
                     const fechaPago = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
                     
-                    // Registro del historial de cobro
                     if(!deudor.historialPagos) deudor.historialPagos = [];
                     deudor.historialPagos.push({
                         monto: montoPago,
@@ -871,7 +954,7 @@ refDeudores.on('value', (snapshot) => {
             }
         });
 
-        // ACTUALIZAR PANTALLA DE ADMINISTRACIÓN DE DEUDORES CON BOTÓN BORRAR
+        // ACTUALIZAR PANTALLA DE ADMINISTRACIÓN DE DEUDORES
         function actualizarListaAdminDeudores() {
             const ulAdmin = document.getElementById('listaAdminDeudores');
             if(!ulAdmin) return;
@@ -905,7 +988,7 @@ refDeudores.on('value', (snapshot) => {
             });
         }
 
-        // ELIMINACIÓN EXCLUSIVA DE DEUDORES DESDE ADMINISTRACIÓN
+        // ELIMINACIÓN EXCLUSIVA DE DEUDORES
         function eliminarDeudor(index) {
             if(confirm("¿Estás seguro de que deseas borrar definitivamente a este deudor del sistema?")) {
                 deudoresLista.splice(index, 1);
@@ -939,6 +1022,7 @@ refDeudores.on('value', (snapshot) => {
                 document.getElementById('usuario').value = '';
                 document.getElementById('clave').value = '';
                 actualizarListaAdminDeudores();
+                actualizarListaVentasAdmin();
             } else {
                 alert("Usuario o contraseña incorrecta");
             }
@@ -954,4 +1038,4 @@ refDeudores.on('value', (snapshot) => {
         actualizarListaAdminDeudores();
     </script>
 </body>
-</html>
+</html>        
