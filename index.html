@@ -682,18 +682,21 @@
                     if (!isNaN(cantidad) && cantidad > 0) {
                         if (cantidad <= p.cant) {
                             p.cant -= cantidad;
-                            
-                            const fechaActual = new Date();
-                            const registroVenta = {
-                                id: Date.now(),
-                                cod: cod,
-                                desc: p.desc,
-                                cant: cantidad,
-                                precioTotal: p.precio * cantidad,
-                                fechaHora: fechaActual.toLocaleString('es-AR')
-                            };
+                            // 1. .push() genera una clave única alfanumérica en Firebase (ej: -NzkX9Y8z...)
+                    const nuevaVentaRef = refVentas.push();
 
-                            refVentas.child(registroVenta.id).set(registroVenta);
+                    const registroVenta = {
+                    id: nuevaVentaRef.key, // Toma la clave irrepetible generada
+                    cod: cod,
+                    desc: p.desc,
+                    cant: cantidad,
+                    precioTotal: p.precio * cantidad,
+                    fechaHora: fechaActual.toLocaleString('es-AR')
+        };
+
+            // 2. Guarda en ese elemento único sin tocar las ventas anteriores
+                        nuevaVentaRef.set(registroVenta);
+                            
                             
                             guardarDatosLocal();
                             actualizarListasProductos();
