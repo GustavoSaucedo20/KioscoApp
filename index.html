@@ -630,19 +630,22 @@
                 hayProductos = true;
                 const p = baseDatos[cod];
                 
+               // Determina si se muestra en kg o en unidades según la categoría
+                const unidad = (p.categoria === 'Verduras y Frutas') ? 'kg' : 'u.';
                 const contenidoHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <div>
-                            <strong>${p.desc}</strong> | Código: ${cod} | 
-                            <span style="color: #1b5e20; font-weight: bold;">Stock: ${p.cant}</span> | 
-                            Precio: $${p.precio} | Entrada: ${p.fechaEntrada} (${p.categoria})
-                        </div>
-                        <div style="display: flex; gap: 5px;">
-                            <button onclick="venderProducto('${cod}')" style="background-color: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🛒 Vender</button>
-                            <button onclick="borrarProducto('${cod}')" style="background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️ Borrar</button>
-                        </div>
-                    </div>
-                `;
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                 <div>
+                  <strong>${p.desc}</strong> | Código: ${cod} | 
+                  <span style="color: #1b5e20; font-weight: bold;">Stock: ${p.cant} ${unidad}</span> | 
+                    Precio: $${p.precio} | Entrada: ${p.fechaEntrada} (${p.categoria})
+         </div>
+         <div style="display: flex; gap: 5px;">
+            <button onclick="venderProducto('${cod}')" style="background-color: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🛒 Vender</button>
+            <button onclick="borrarProducto('${cod}')" style="background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️ Borrar</button>
+        </div>
+    </div>
+`;
+
 
                 const liTodos = document.createElement('li');
                 liTodos.innerHTML = contenidoHTML;
