@@ -673,46 +673,54 @@
             }
         }
         
-        // FUNCIÓN PARA REGISTRAR VENTA Y GUARDAR HISTORIAL
+         // FUNCIÓN PARA REGISTRAR VENTA Y GUARDAR HISTORIAL
         function venderProducto(cod) {
             if (baseDatos[cod]) {
-                const p = baseDatos[cod];
-                const respuesta = prompt(`Vender "${p.desc}".\nStock actual: ${p.cant}\n\n¿Cuántas unidades vendiste?`, "1");
-                
-                if (respuesta !== null) {
-                    const cantidad = parseInt(respuesta.trim());
+            const p = baseDatos[cod];
+            const esKilo = (p.categoria === 'Verduras y Frutas');
+            const etiquetaUnidad = esKilo ? 'kg' : 'unidades';
+        
+            const respuesta = prompt(`Vender "${p.desc}".\nStock actual: ${p.cant} ${etiquetaUnidad}\n\n¿Cuántos ${etiquetaUnidad} vendiste?`, "1");
+        
+         if (respuesta !== null) {
+            // parseFloat permite ingresar números con coma o punto (ej: 0.5 o 1.5 kg)
+            const cantidad = parseFloat(respuesta.trim().replace(',', '.'));
+            
+            if (!isNaN(cantidad) && cantidad > 0) {
+                if (cantidad <= p.cant) {
+                    // Resta el stock y redondea a 2 decimales para evitar imprecisiones
+                    p.cant = parseFloat((p.cant - cantidad).toFixed(2));
                     
-                    if (!isNaN(cantidad) && cantidad > 0) {
-                        if (cantidad <= p.cant) {
-                            p.cant -= cantidad;
-                            // 1. .push() genera una clave única alfanumérica en Firebase (ej: -NzkX9Y8z...)
+                    const fechaActual = new Date();
                     const nuevaVentaRef = refVentas.push();
-
                     const registroVenta = {
-                    id: nuevaVentaRef.key, // Toma la clave irrepetible generada
-                    cod: cod,
-                    desc: p.desc,
-                    cant: cantidad,
-                    precioTotal: p.precio * cantidad,
-                    fechaHora: fechaActual.toLocaleString('es-AR')
-        };
+                        id: nuevaVentaRef.key,
+                        cod: cod,
+                        desc: p.desc,
+                        cant: cantidad,
+                        unidad: etiquetaUnidad,
+                        precioTotal: parseFloat((p.precio * cantidad).toFixed(2)),
+                        fechaHora: fechaActual.toLocaleString('es-AR')
+                    };
 
-            // 2. Guarda en ese elemento único sin tocar las ventas anteriores
-                        nuevaVentaRef.set(registroVenta);
-                            
-                            
-                            guardarDatosLocal();
-                            actualizarListasProductos();
-                            alert(`Venta registrada. Nuevo stock de ${p.desc}: ${p.cant}`);
-                        } else {
-                            alert(`No podés vender ${cantidad} unidades porque solo tenés ${p.cant} en stock.`);
-                        }
-                    } else {
-                        alert("Por favor, ingresá un número válido mayor a 0.");
-                    }
+                    // Guardar la venta en Firebase y actualizar stock local + nube
+                    nuevaVentaRef.set(registroVenta);
+                    guardarDatosLocal();
+                    
+                    // Refrescar vistas en pantalla inmediatamente
+                    actualizarListasProductos();
+                    actualizarListaVentasAdmin();
+                    
+                    alert(`Venta registrada. Nuevo stock de ${p.desc}: ${p.cant} ${etiquetaUnidad}`);
+                } else {
+                    alert(`No podés vender ${cantidad} ${etiquetaUnidad} porque solo tenés ${p.cant} en stock.`);
                 }
+            } else {
+                alert("Por favor, ingresá un número válido mayor a 0.");
             }
         }
+    }
+}
 
         // FUNCIÓN PARA MOSTRAR HISTORIAL DE VENTAS EN ADMIN
         function actualizarListaVentasAdmin() {
