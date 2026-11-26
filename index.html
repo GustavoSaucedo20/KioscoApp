@@ -597,20 +597,23 @@
             }
         });
 
-        // FUNCIÓN PARA LIMPIAR CAMPOS Y OCULTAR EL CARTEL DE ERROR
         function limpiarFormularioCarga() {
-            document.getElementById('nuevoCodProd').value = '';
-            document.getElementById('nuevoDescProd').value = '';
-            document.getElementById('nuevoCantProd').value = '';
-            document.getElementById('nuevoPrecioProd').value = '';
-            
-            const cartelError = document.getElementById('errorCodDuplicado');
-            if (cartelError) {
-                cartelError.style.display = 'none';
-            }
-            
-            document.getElementById('nuevoCodProd').focus();
-        }
+    document.getElementById('nuevoCodProd').value = '';
+    document.getElementById('nuevoDescProd').value = '';
+    document.getElementById('nuevoCantProd').value = '';
+    document.getElementById('nuevoPrecioProd').value = '';
+    
+    // Restablece el texto de stock al valor por defecto
+    document.getElementById('nuevoCantProd').placeholder = "Cantidad (Stock)";
+    document.getElementById('nuevaCategoria').value = "Almacén";
+    
+    const cartelError = document.getElementById('errorCodDuplicado');
+    if (cartelError) {
+        cartelError.style.display = 'none';
+    }
+    
+    document.getElementById('nuevoCodProd').focus();
+}
 
         // ACTUALIZAR LISTAS DE PRODUCTOS CON BOTÓN "VENDER"
         function actualizarListasProductos() {
