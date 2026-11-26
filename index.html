@@ -1050,6 +1050,19 @@
 
         actualizarListasProductos();
         actualizarListaAdminDeudores();
+        // CAMBIAR PLACEHOLDER DE STOCK SEGÚN LA CATEGORÍA SELECCIONADA
+const selectCat = document.getElementById('nuevaCategoria');
+const inputCant = document.getElementById('nuevoCantProd');
+
+if (selectCat && inputCant) {
+    selectCat.addEventListener('change', function() {
+        if (this.value === 'Verduras y Frutas') {
+            inputCant.placeholder = "Cantidad en kg (Stock, ej: 1.5)";
+        } else {
+            inputCant.placeholder = "Cantidad (Stock en unidades)";
+        }
+    });
+}
     </script>
 </body>
 </html>        
